@@ -1,0 +1,7 @@
+torch>=2.0
+timm>=0.9
+numpy
+scikit-learn
+matplotlib
+torch-optimizer    # LAMB optimiser; without it training falls back to AdamW
+# wandb            # optional logging (set WANDB_MODE=online to enable)

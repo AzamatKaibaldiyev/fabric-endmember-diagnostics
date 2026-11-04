@@ -1,0 +1,95 @@
+% =====================================================================
+%  Figure 1 — architecture.
+%  \input{fig_architecture} inside a figure environment, or compile alone.
+%  Requires: \usepackage{tikz} and \usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+%
+%  The figure is built to make three points that the prose has to spell out:
+%    (1) the decoder is DOWNSTREAM of the regression head, not a third parallel
+%        branch -- the composition is the bottleneck the reconstruction must
+%        pass through;
+%    (2) the endmember bank is 12 SHARED learnable spectra, not per-sample
+%        outputs (per-sample endmembers would be ELMM, our future work);
+%    (3) only the abundances are supervised; the endmembers have no target.
+% =====================================================================
+\begin{tikzpicture}[
+  font=\small,
+  box/.style={draw, rounded corners=2pt, minimum height=8mm, align=center,
+              inner xsep=4pt, fill=white},
+  net/.style={box, fill=blue!7, minimum width=20mm},
+  head/.style={box, fill=blue!7, minimum width=16mm},
+  vec/.style={box, fill=gray!8, minimum width=17mm},
+  em/.style={box, fill=orange!12, minimum width=22mm},
+  loss/.style={draw, dashed, rounded corners=2pt, fill=red!6, align=center,
+               inner sep=3pt, font=\footnotesize},
+  ar/.style={-{Latex[length=2mm]}, thick},
+  lbl/.style={font=\scriptsize\itshape, text=black!60},
+]
+
+% ---------- input ----------
+\node (xin) [box, minimum width=17mm] {measured\\spectrum $\mathbf{x}$};
+\node (xdim) [lbl, below=0.5mm of xin] {$2\times200$};
+
+% ---------- backbone ----------
+\node (bb) [net, right=7mm of xin] {ConvNeXtV2-1D\\backbone};
+\node (feat) [lbl, below=0.5mm of bb] {320-d features};
+
+% ---------- heads ----------
+\node (mlc) [head, above right=4mm and 8mm of bb] {presence\\head};
+\node (reg) [head, below right=4mm and 8mm of bb] {composition\\head};
+
+\node (yhat) [vec, right=7mm of mlc] {$\hat{\mathbf{y}}\in\mathbb{R}^{12}$};
+\node (chat) [vec, right=7mm of reg] {$\hat{\mathbf{c}}\in\mathbb{R}^{12}$};
+\node (cdim) [lbl, below=0.5mm of chat] {percentages, $\sum=100$};
+
+\draw [ar] (xin) -- (bb);
+\draw [ar] (bb.east) -- ++(3mm,0) |- (mlc.west);
+\draw [ar] (bb.east) -- ++(3mm,0) |- (reg.west);
+\draw [ar] (mlc) -- (yhat);
+\draw [ar] (reg) -- (chat);
+
+% ---------- supervision on the two heads ----------
+\node (sup) [loss, above=5mm of yhat] {presence labels};
+\node (sup2) [loss, below=9mm of chat, xshift=-6mm]
+      {composition labels\\(chemical analysis)};
+\draw [ar, red!60, dashed] (sup) -- (yhat);
+\draw [ar, red!60, dashed] (sup2) -- (chat);
+
+% ---------- the bottleneck ----------
+\node (ab) [vec, right=9mm of chat, fill=green!10]
+      {$\mathbf{a}=\hat{\mathbf{c}}/\!\sum\hat{\mathbf{c}}$};
+\node (abdim) [lbl, below=0.5mm of ab] {$\mathbf{a}\in\Delta^{11}$};
+\draw [ar] (chat) -- node[above, font=\scriptsize] {simplex} (ab);
+
+% ---------- endmember bank ----------
+\node (E) [em, below=13mm of ab]
+      {endmember bank $\mathbf{E}$\\[1pt]
+       \footnotesize 12 spectra, $12\!\times\!2\!\times\!200$};
+\node (Enote) [lbl, below=0.5mm of E, align=center]
+      {4{,}800 parameters (0.13\% of model)\\shared across all samples; no target};
+
+% ---------- reconstruction ----------
+\node (mix) [box, right=9mm of ab, fill=orange!12]
+      {$\hat{\mathbf{x}}=\sum_k a_k\mathbf{E}_k$};
+\draw [ar] (ab) -- (mix);
+\draw [ar, orange!70!black] (E.east) -| (mix.south);
+
+\node (rec) [loss, right=6mm of mix] {$\lVert\hat{\mathbf{x}}-\mathbf{x}\rVert^2$};
+\draw [ar] (mix) -- (rec);
+\draw [ar, red!60, dashed] (xin.north) to[out=90, in=170]
+      node[above, lbl, pos=0.75] {reconstruction target} (rec.north west);
+
+% ---------- the control ----------
+\node (ctrl) [box, dashed, below=7mm of mix, fill=gray!5, align=center,
+              font=\footnotesize]
+      {\emph{control:} free MLP\\replaces $\sum_k a_k\mathbf{E}_k$};
+\draw [-{Latex[length=1.6mm]}, gray, dashed] (ctrl) -- (mix);
+
+% ---------- annotation of the key structural point ----------
+\begin{scope}[on background layer]
+  \node (bn) [draw=green!45!black, dashed, rounded corners=3pt,
+              fit=(chat)(ab), inner sep=5pt] {};
+\end{scope}
+\node [above=1mm of bn, font=\scriptsize\bfseries, text=green!35!black]
+      {12-number bottleneck};
+
+\end{tikzpicture}

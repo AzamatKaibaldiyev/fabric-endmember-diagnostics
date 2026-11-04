@@ -1,0 +1,8 @@
+data/*
+!data/README.md
+chkpts/
+*.pt
+wandb/
+__pycache__/
+*.pyc
+.DS_Store

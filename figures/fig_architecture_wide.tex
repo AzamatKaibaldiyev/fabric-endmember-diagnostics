@@ -1,0 +1,39 @@
+% Wide, flat version of the architecture figure (ESANN paper, 12.2 cm text width).
+% Needs \usepackage{tikz} and \usetikzlibrary{arrows.meta,positioning}.
+\begin{tikzpicture}[
+  font=\scriptsize,
+  box/.style={draw, rounded corners=2pt, minimum height=6mm, align=center,
+              inner xsep=2.5pt, fill=white},
+  net/.style={box, fill=blue!7},
+  vec/.style={box, fill=gray!8},
+  em/.style={box, fill=orange!12},
+  loss/.style={draw, dashed, rounded corners=2pt, fill=red!6, align=center,
+               inner sep=2pt},
+  ar/.style={-{Latex[length=1.5mm]}, semithick},
+  sup/.style={-{Latex[length=1.3mm]}, red!60, dashed},
+]
+\node (xin) [box] {spectrum $\mathbf{x}$\\$2\times200$};
+\node (bb)  [net, right=3.5mm of xin] {ConvNeXtV2\\1-D backbone};
+\node (mlc) [net, right=4mm of bb, yshift=5.5mm] {presence\\head};
+\node (reg) [net, right=4mm of bb, yshift=-5.5mm] {composition\\head};
+\node (yhat)[vec, right=2.5mm of mlc] {$\hat{\mathbf{y}}$};
+\node (ly)  [loss, right=2.5mm of yhat] {presence labels};
+\node (chat)[vec, right=2.5mm of reg] {$\hat{\mathbf{c}}$};
+\node (ab)  [vec, right=3mm of chat, fill=green!10] {$\mathbf{a}=\hat{\mathbf{c}}/\!\sum\hat{\mathbf{c}}$};
+\node (mix) [em, right=3mm of ab] {$\hat{\mathbf{x}}=\sum_k a_k\mathbf{E}_k$};
+\node (rec) [loss, right=3mm of mix] {$\lVert\hat{\mathbf{x}}-\mathbf{x}\rVert^2$};
+\node (E)   [em, below=3mm of mix] {endmembers $\mathbf{E}$\\$12\times2\times200$, no target};
+\node (lc)  [loss, below=3mm of chat] {composition\\labels};
+\draw [ar] (xin) -- (bb);
+\draw [ar] (bb.east) -- ++(2mm,0) |- (mlc.west);
+\draw [ar] (bb.east) -- ++(2mm,0) |- (reg.west);
+\draw [ar] (mlc) -- (yhat);
+\draw [sup] (ly) -- (yhat);
+\draw [ar] (reg) -- (chat);
+\draw [ar] (chat) -- (ab);
+\draw [ar] (ab) -- (mix);
+\draw [ar] (E) -- (mix);
+\draw [ar] (mix) -- (rec);
+\draw [sup] (lc) -- (chat);
+\draw [sup] (xin.south) |- ([yshift=-3mm]E.south) -| (rec.south);
+\end{tikzpicture}

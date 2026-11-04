@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper."
+title: "fabric-endmember-diagnostics: physics-informed unmixing diagnostics for near-infrared fibre models"
+authors:
+  - family-names: Kaibaldiyev
+    given-names: Azamat
+license: MIT
+repository-code: "https://github.com/OWNER/REPOSITORY"
